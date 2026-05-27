@@ -346,8 +346,41 @@
       font-weight: 300;
       line-height: 1.85;
       color: var(--ink);
-      white-space: pre-wrap;
       word-break: break-word;
+    }
+
+    .article-body h2 {
+      font-family: var(--serif);
+      font-size: 1.6rem;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      margin: 0 0 20px 0;
+      line-height: 1.2;
+    }
+
+    .article-body h3 {
+      font-family: var(--sans);
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: var(--ink);
+      margin: 28px 0 8px 0;
+      letter-spacing: 0.01em;
+    }
+
+    .article-body p {
+      margin: 0 0 16px 0;
+      color: var(--ink-2);
+    }
+
+    .article-body strong {
+      font-weight: 500;
+      color: var(--ink);
+    }
+
+    .article-body em {
+      font-style: italic;
+      color: var(--ink-2);
     }
 
     /* ── Footer ── */
@@ -439,7 +472,7 @@
 
   <script>
     // ── CONFIG ──────────────────────────────────────────
-    const WEBHOOK_URL = "https://hook.us2.make.com/22898jfmq57iygo9rpa3vnmgrjmtgf48";
+    const WEBHOOK_URL = "/api/generate";
     // ────────────────────────────────────────────────────
 
     const topicInput   = document.getElementById("topic");
@@ -520,7 +553,6 @@
           article = data.article || data.content || data.text || "";
           if (!article) throw new Error("JSON has no article field");
         } catch {
-          // Not JSON — use raw text directly (plain text mode)
           article = rawText;
         }
 
@@ -528,8 +560,15 @@
           throw new Error("Article content is empty. Check your Groq API response mapping in Make.com.");
         }
 
-        // Show article
-        articleBody.textContent = article;
+        // Strip <think>...</think> block (Qwen reasoning model output)
+        article = cleanArticle(article);
+
+        if (!article.trim()) {
+          throw new Error("No article content found after cleaning model output.");
+        }
+
+        // Show article with markdown rendered
+        articleBody.innerHTML = renderMarkdown(article);
         wordCount.textContent = `${countWords(article).toLocaleString()} words`;
         outputSection.classList.add("visible");
         outputSection.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -542,8 +581,70 @@
       }
     }
 
+    // ── Strip <think>...</think> block from model output ──
+    function cleanArticle(text) {
+      // Remove everything inside <think>...</think> including the tags
+      text = text.replace(/<think>[\s\S]*?<\/think>/gi, "");
+      // Remove any leftover <think> or </think> tags
+      text = text.replace(/<\/?think>/gi, "");
+      return text.trim();
+    }
+
+    // ── Convert basic Markdown to HTML ──
+    function renderMarkdown(text) {
+      // Escape HTML special characters first to prevent XSS
+      const escape = s => s
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+      const lines = text.split("\n");
+      let html = "";
+      let inParagraph = false;
+
+      for (let i = 0; i < lines.length; i++) {
+        let line = lines[i];
+
+        // Skip empty lines — close open paragraph
+        if (!line.trim()) {
+          if (inParagraph) { html += "</p>"; inParagraph = false; }
+          continue;
+        }
+
+        // --- Heading: lines that are ONLY **text** (bold title pattern)
+        const headingMatch = line.match(/^\*\*(.+)\*\*\s*$/);
+        if (headingMatch) {
+          if (inParagraph) { html += "</p>"; inParagraph = false; }
+          // First **bold** line = main title (h2), rest = subheadings (h3)
+          const isFirst = html === "";
+          const tag = isFirst ? "h2" : "h3";
+          html += `<${tag}>${escape(headingMatch[1])}</${tag}>`;
+          continue;
+        }
+
+        // --- Inline bold: **word** inside a sentence
+        line = line.replace(/\*\*(.+?)\*\*/g, (_, m) => `<strong>${escape(m)}</strong>`);
+        // --- Inline italic: *word*
+        line = line.replace(/\*(.+?)\*/g, (_, m) => `<em>${escape(m)}</em>`);
+        // For lines that weren't fully escaped yet (no ** wrapping), escape remaining
+        // Only escape if not already containing HTML tags we inserted
+        if (!line.includes("<strong>") && !line.includes("<em>")) {
+          line = escape(line);
+        }
+
+        // --- Regular paragraph line
+        if (!inParagraph) { html += "<p>"; inParagraph = true; }
+        else { html += " "; }
+        html += line;
+      }
+
+      if (inParagraph) html += "</p>";
+      return html;
+    }
+
     async function copyArticle() {
-      const text = articleBody.textContent;
+      // Get plain text from rendered HTML
+      const text = articleBody.innerText;
       try {
         await navigator.clipboard.writeText(text);
         document.getElementById("copyIcon").textContent = "✓";
