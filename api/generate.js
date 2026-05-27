@@ -49,7 +49,7 @@ export default async function handler(req) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "llama3-70b-8192",
+          model: "llama3-3-70b-versatile",
           messages: [
             {
               role: "system",
