@@ -1,160 +1,562 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Article Generator</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ArticleAI — Instant Article Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-      padding: 40px 20px;
-      min-height: 100vh;
-    }
-    .container {
-      max-width: 800px;
-      margin: auto;
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-    }
-    h1 { margin-bottom: 24px; font-size: 1.8rem; }
-    input {
-      width: 100%;
-      padding: 14px;
-      font-size: 16px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-    }
-    button {
-      margin-top: 12px;
-      padding: 12px 24px;
-      background: black;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    #status {
-      margin-top: 20px;
-      font-size: 14px;
-      color: #666;
-      display: none;
+    :root {
+      --ink:       #0f0e0d;
+      --ink-2:     #4a4845;
+      --ink-3:     #9a9793;
+      --paper:     #faf9f7;
+      --cream:     #f2efe9;
+      --accent:    #c8502a;
+      --accent-2:  #e8d5c4;
+      --border:    #e0dbd3;
+      --success:   #2d6a4f;
+      --error-bg:  #fff4f0;
+      --error-txt: #9b2a10;
+      --serif:     'DM Serif Display', Georgia, serif;
+      --sans:      'DM Sans', system-ui, sans-serif;
+      --radius:    4px;
+      --shadow:    0 2px 24px rgba(15,14,13,0.08);
     }
-    #error-box {
-      margin-top: 20px;
-      background: #fff0f0;
-      border: 1px solid #ffcccc;
-      border-radius: 6px;
-      padding: 16px;
-      color: #c0392b;
-      font-size: 14px;
-      display: none;
+
+    html { font-size: 16px; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
-    #output {
-      margin-top: 24px;
+
+    /* ── Header ── */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 18px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--paper);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .logo {
+      font-family: var(--serif);
+      font-size: 1.35rem;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      text-decoration: none;
+    }
+
+    .logo span { color: var(--accent); }
+
+    .powered-by {
+      font-size: 0.72rem;
+      font-weight: 400;
+      color: var(--ink-3);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 72px 40px 48px;
+      max-width: 780px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .eyebrow {
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-family: var(--serif);
+      font-size: clamp(2.2rem, 5vw, 3.4rem);
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      margin-bottom: 20px;
+    }
+
+    h1 em {
+      font-style: italic;
+      color: var(--ink-2);
+    }
+
+    .subtitle {
+      font-size: 1.05rem;
+      font-weight: 300;
+      color: var(--ink-2);
+      line-height: 1.7;
+      max-width: 520px;
+    }
+
+    /* ── Input Area ── */
+    .input-section {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 0 40px 48px;
+      width: 100%;
+    }
+
+    .input-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    .input-label {
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      font-family: var(--sans);
+      font-size: 1rem;
+      font-weight: 400;
+      color: var(--ink);
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input[type="text"]::placeholder { color: var(--ink-3); }
+
+    input[type="text"]:focus {
+      border-color: var(--ink-2);
+      box-shadow: 0 0 0 3px rgba(15,14,13,0.06);
+    }
+
+    .generate-btn {
+      font-family: var(--sans);
+      font-size: 0.9rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      color: white;
+      background: var(--ink);
+      border: none;
+      border-radius: var(--radius);
+      padding: 14px 28px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .generate-btn:hover { background: #2a2927; }
+    .generate-btn:active { transform: scale(0.98); }
+    .generate-btn:disabled {
+      background: var(--ink-3);
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-icon { font-size: 1rem; transition: transform 0.2s; }
+    .generate-btn:not(:disabled):hover .btn-icon { transform: translateX(3px); }
+
+    .hint {
+      margin-top: 12px;
+      font-size: 0.78rem;
+      color: var(--ink-3);
+    }
+
+    .hint strong { color: var(--ink-2); font-weight: 500; }
+
+    /* ── Status States ── */
+    .status-bar {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      margin-top: 20px;
+      padding: 14px 18px;
+      background: var(--cream);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+
+    .status-bar.visible { display: flex; }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border);
+      border-top-color: var(--ink);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .status-text {
+      font-size: 0.88rem;
+      color: var(--ink-2);
+    }
+
+    .status-dots::after {
+      content: '';
+      animation: dots 1.4s steps(4, end) infinite;
+    }
+
+    @keyframes dots {
+      0%   { content: ''; }
+      25%  { content: '.'; }
+      50%  { content: '..'; }
+      75%  { content: '...'; }
+    }
+
+    /* ── Error ── */
+    .error-box {
+      display: none;
+      margin-top: 20px;
+      padding: 16px 18px;
+      background: var(--error-bg);
+      border: 1px solid #f4c4b4;
+      border-radius: var(--radius);
+      border-left: 3px solid var(--accent);
+    }
+
+    .error-box.visible { display: block; }
+
+    .error-title {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--error-txt);
+      margin-bottom: 4px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .error-msg {
+      font-size: 0.88rem;
+      color: var(--error-txt);
+      line-height: 1.6;
+    }
+
+    /* ── Article Output ── */
+    .output-section {
+      display: none;
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 0 40px 80px;
+      width: 100%;
+      animation: fadeUp 0.5s ease forwards;
+    }
+
+    .output-section.visible { display: block; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .output-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .output-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .success-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #e8f5ee;
+      color: var(--success);
+      border: 1px solid #b7dfc8;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .word-count {
+      font-size: 0.78rem;
+      color: var(--ink-3);
+    }
+
+    .copy-btn {
+      font-family: var(--sans);
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--ink-2);
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 7px 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .copy-btn:hover {
+      background: var(--cream);
+      border-color: var(--ink-3);
+    }
+
+    .article-body {
+      font-family: var(--sans);
+      font-size: 1.05rem;
+      font-weight: 300;
+      line-height: 1.85;
+      color: var(--ink);
       white-space: pre-wrap;
-      line-height: 1.8;
-      font-size: 15px;
-      border-top: 1px solid #eee;
-      padding-top: 24px;
-      display: none;
+      word-break: break-word;
+    }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: auto;
+      border-top: 1px solid var(--border);
+      padding: 20px 40px;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--ink-3);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      header { padding: 14px 20px; }
+      .hero  { padding: 48px 20px 32px; }
+      .input-section, .output-section { padding-left: 20px; padding-right: 20px; }
+      .input-row { flex-direction: column; }
+      .generate-btn { justify-content: center; }
+      h1 { font-size: 2rem; }
     }
   </style>
 </head>
 <body>
 
-<div class="container">
-  <h1>AI Article Generator</h1>
+  <!-- Header -->
+  <header>
+    <a class="logo" href="#">Article<span>AI</span></a>
+    <span class="powered-by">Powered by Groq + Make.com</span>
+  </header>
 
-  <input
-    type="text"
-    id="topic"
-    placeholder="Enter article topic e.g. Cyber Security"
-  />
+  <!-- Hero -->
+  <section class="hero">
+    <p class="eyebrow">AI Article Generator</p>
+    <h1>Write a full article<br/><em>in seconds.</em></h1>
+    <p class="subtitle">Enter any topic and get a professionally written 500-word article — introduction, body, and conclusion — instantly generated by AI.</p>
+  </section>
 
-  <br/>
-  <button id="btn" onclick="generateArticle()">Generate Article</button>
+  <!-- Input -->
+  <section class="input-section">
+    <div class="input-card">
+      <label class="input-label" for="topic">Article topic</label>
+      <div class="input-row">
+        <input
+          type="text"
+          id="topic"
+          placeholder="e.g. The Future of Cybersecurity"
+          autocomplete="off"
+        />
+        <button class="generate-btn" id="generateBtn" onclick="generateArticle()">
+          Generate <span class="btn-icon">→</span>
+        </button>
+      </div>
+      <p class="hint">Try: <strong>Artificial Intelligence in Healthcare</strong>, <strong>Climate Change Solutions</strong>, <strong>Web3 and the Future of Finance</strong></p>
 
-  <p id="status">⏳ Generating your article, please wait (10–20 sec)...</p>
+      <!-- Status -->
+      <div class="status-bar" id="statusBar">
+        <div class="spinner"></div>
+        <span class="status-text">Generating your article<span class="status-dots"></span></span>
+      </div>
 
-  <div id="error-box"></div>
+      <!-- Error -->
+      <div class="error-box" id="errorBox">
+        <p class="error-title">Something went wrong</p>
+        <p class="error-msg" id="errorMsg"></p>
+      </div>
+    </div>
+  </section>
 
-  <div id="output"></div>
-</div>
+  <!-- Output -->
+  <section class="output-section" id="outputSection">
+    <div class="output-header">
+      <div class="output-meta">
+        <span class="success-badge">✓ Generated</span>
+        <span class="word-count" id="wordCount"></span>
+      </div>
+      <button class="copy-btn" onclick="copyArticle()">
+        <span id="copyIcon">⎘</span>
+        <span id="copyText">Copy article</span>
+      </button>
+    </div>
+    <div class="article-body" id="articleBody"></div>
+  </section>
 
-<script>
-  const WEBHOOK_URL = "https://hook.us2.make.com/22898jfmq57iygo9rpa3vnmgrjmtgf48";
+  <!-- Footer -->
+  <footer>
+    Built with Make.com · Groq API · Deployed on Vercel
+  </footer>
 
-  async function generateArticle() {
-    const topic = document.getElementById("topic").value.trim();
-    const btn = document.getElementById("btn");
-    const status = document.getElementById("status");
-    const errorBox = document.getElementById("error-box");
-    const output = document.getElementById("output");
+  <script>
+    // ── CONFIG ──────────────────────────────────────────
+    const WEBHOOK_URL = "https://hook.us2.make.com/22898jfmq57iygo9rpa3vnmgrjmtgf48";
+    // ────────────────────────────────────────────────────
 
-    // Validation
-    if (!topic) {
-      alert("Please enter a topic.");
-      return;
+    const topicInput   = document.getElementById("topic");
+    const generateBtn  = document.getElementById("generateBtn");
+    const statusBar    = document.getElementById("statusBar");
+    const errorBox     = document.getElementById("errorBox");
+    const errorMsg     = document.getElementById("errorMsg");
+    const outputSection= document.getElementById("outputSection");
+    const articleBody  = document.getElementById("articleBody");
+    const wordCount    = document.getElementById("wordCount");
+
+    // Allow Enter key
+    topicInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") generateArticle();
+    });
+
+    function setLoading(on) {
+      generateBtn.disabled = on;
+      generateBtn.innerHTML = on
+        ? 'Generating <span class="btn-icon">⏳</span>'
+        : 'Generate <span class="btn-icon">→</span>';
+      statusBar.classList.toggle("visible", on);
     }
 
-    // Reset UI
-    errorBox.style.display = "none";
-    output.style.display = "none";
-    status.style.display = "block";
-    btn.disabled = true;
+    function showError(msg) {
+      errorBox.classList.add("visible");
+      errorMsg.textContent = msg;
+    }
 
-    try {
-      const response = await fetch(WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic })
-      });
+    function hideError() {
+      errorBox.classList.remove("visible");
+    }
 
-      // Log raw status for debugging
-      console.log("HTTP Status:", response.status);
+    function countWords(text) {
+      return text.trim().split(/\s+/).filter(Boolean).length;
+    }
 
-      const text = await response.text();
-      console.log("Raw response:", text);
+    async function generateArticle() {
+      const topic = topicInput.value.trim();
 
-      // Try to parse JSON
-      let data;
+      if (!topic) {
+        topicInput.focus();
+        topicInput.style.borderColor = "var(--accent)";
+        setTimeout(() => topicInput.style.borderColor = "", 1500);
+        return;
+      }
+
+      // Reset UI
+      hideError();
+      outputSection.classList.remove("visible");
+      setLoading(true);
+
       try {
-        data = JSON.parse(text);
-      } catch (e) {
-        throw new Error("Make.com returned non-JSON response: " + text);
-      }
+        const response = await fetch(WEBHOOK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ topic })
+        });
 
-      if (data.success && data.article) {
-        output.textContent = data.article;
-        output.style.display = "block";
-      } else {
-        throw new Error("Unexpected response: " + JSON.stringify(data));
-      }
+        console.log("HTTP Status:", response.status);
 
-    } catch (err) {
-      console.error("Error:", err);
-      errorBox.innerHTML = `
-        <strong>Error:</strong> ${err.message}<br><br>
-        <small>Open browser Console (F12) for full details.</small>
-      `;
-      errorBox.style.display = "block";
-    } finally {
-      status.style.display = "none";
-      btn.disabled = false;
+        // Read raw text first — works for both JSON and plain text responses
+        const rawText = await response.text();
+        console.log("Raw response:", rawText);
+
+        if (!response.ok) {
+          throw new Error(`Server returned status ${response.status}. Check that your Make.com scenario is active.`);
+        }
+
+        if (!rawText || rawText.trim() === "" || rawText.trim() === "Accepted") {
+          throw new Error("Make.com returned no article content. Check that your Webhook Response module is configured correctly and the scenario is turned ON.");
+        }
+
+        // Try JSON first, fall back to plain text
+        let article = "";
+        try {
+          const data = JSON.parse(rawText);
+          article = data.article || data.content || data.text || "";
+          if (!article) throw new Error("JSON has no article field");
+        } catch {
+          // Not JSON — use raw text directly (plain text mode)
+          article = rawText;
+        }
+
+        if (!article.trim()) {
+          throw new Error("Article content is empty. Check your Groq API response mapping in Make.com.");
+        }
+
+        // Show article
+        articleBody.textContent = article;
+        wordCount.textContent = `${countWords(article).toLocaleString()} words`;
+        outputSection.classList.add("visible");
+        outputSection.scrollIntoView({ behavior: "smooth", block: "start" });
+
+      } catch (err) {
+        console.error("Error:", err);
+        showError(err.message);
+      } finally {
+        setLoading(false);
+      }
     }
-  }
 
-  document.getElementById("topic").addEventListener("keypress", (e) => {
-    if (e.key === "Enter") generateArticle();
-  });
-</script>
+    async function copyArticle() {
+      const text = articleBody.textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        document.getElementById("copyIcon").textContent = "✓";
+        document.getElementById("copyText").textContent = "Copied!";
+        setTimeout(() => {
+          document.getElementById("copyIcon").textContent = "⎘";
+          document.getElementById("copyText").textContent = "Copy article";
+        }, 2000);
+      } catch {
+        showError("Could not copy. Please select the text manually.");
+      }
+    }
+  </script>
 
 </body>
 </html>
